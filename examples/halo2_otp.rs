@@ -31,7 +31,6 @@ fn otp_merkle_proof<F: ScalarField>(
     // `Context` can roughly be thought of as a single-threaded execution trace of a program we want to ZK prove. We do some post-processing on `Context` to optimally divide the execution trace into multiple columns in a PLONKish arithmetization
     // More advanced usage with multi-threaded witness generation is possible, but we do not explain it here
 
-    // first we load a private input `x` (let's not worry about public inputs for now)
     let otp = F::from_str_vartime(&input.otp).expect("deserialize field element should not fail");
     let time = F::from_str_vartime(&input.time).expect("deserialize field element should not fail");
     let path_elements = input.path_elements.map(|x: String| ctx.load_witness(F::from_str_vartime(&x).unwrap()));
@@ -73,4 +72,9 @@ fn main() {
 
     let args = Cli::parse();
     run(otp_merkle_proof, args);
+}
+
+#[cfg(test)]
+mod tests {
+    todo!();
 }

@@ -1,4 +1,4 @@
-# Halo2 Examples (Forked from Axiom Scaffold)
+# Halo2 Examples (Forked from Axiom's Halo2 Scaffold)
 
 A bunch of random circuits I'm building to learn Halo2 / Axiom's flexgates
 
@@ -8,3 +8,7 @@ A bunch of random circuits I'm building to learn Halo2 / Axiom's flexgates
 ## Setup
 
 Follow instructions at [Halo2 Scaffold](https://github.com/axiom-crypto/halo2-scaffold.git)
+
+## Todo
+- Verifier contract?
+- Setting up tests
