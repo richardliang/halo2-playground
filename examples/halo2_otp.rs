@@ -43,7 +43,7 @@ fn otp_merkle_proof<F: ScalarField>(
     // create a Gate chip that contains methods for basic arithmetic operations
     let gate = GateChip::<F>::default();
     let mut poseidon = PoseidonChip::<F, T, RATE>::new(ctx, R_F, R_P).unwrap();
-    poseidon.update(&[otp, time]);
+    poseidon.update(&[time, otp]);
     let leaf = poseidon.squeeze(ctx, &gate).unwrap();
 
     // // Loop through the path elements
@@ -54,12 +54,15 @@ fn otp_merkle_proof<F: ScalarField>(
         // Should be 0 or 1
         gate.assert_bit(ctx, path_index[i].clone());
 
+        // Instantiate inner poseidon instances
+        let mut inner_poseidon = PoseidonChip::<F, T, RATE>::new(ctx, R_F, R_P).unwrap();
+
         if *path_index[i].value() == F::zero() {
-            poseidon.update(&[path_elements[i], level_hashes[i]]);
+            inner_poseidon.update(&[level_hashes[i], path_elements[i]]);
         } else {
-            poseidon.update(&[level_hashes[i], path_elements[i]]);
+            inner_poseidon.update(&[path_elements[i], level_hashes[i]]);
         }
-        level_hashes.push(poseidon.squeeze(ctx, &gate).unwrap());
+        level_hashes.push(inner_poseidon.squeeze(ctx, &gate).unwrap());
     }
 
     let root = level_hashes[LEVELS];
@@ -76,5 +79,34 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    todo!();
+    use super::*;
+    use crate::CircuitInput;
+    use halo2_base::gates::builder::{GateThreadBuilder, GateCircuitBuilder};
+    use halo2_base::halo2_proofs::dev::MockProver;
+    use halo2_base::halo2_proofs::halo2curves::bn256::Fr;
+
+    #[test]
+    fn test_otp_merkle_proof() {
+        let params = CircuitInput {
+            otp: "12345".to_string(),
+            time: "3155000".to_string(),
+            path_elements: ["1234","11234","12222","118865","435676","494999","4837377","1234","11234","12222","118865","435676","494999","4837377","1234","11234","12222","118865","435676","494999","4837377","1234","11234","12222","118865","435676","494999"].map(|x| x.to_string()),
+            path_index: ["1","1","0","1","0","1","0","1","1","0","1","0","1","0","1","1","0","1","0","1","0","1","1","0","1","0","1"].map(|x| x.to_string())
+        };
+
+        let k = 10u32;
+
+        // Instantiate Vec of AssignedValue<F> to store public inputs
+        let mut make_public = vec![];
+
+        let mut builder = GateThreadBuilder::<Fr>::mock();
+        otp_merkle_proof(builder.main(0), params, &mut make_public);
+
+        builder.config(k as usize, Some(12));
+
+        let circuit = GateCircuitBuilder::mock(builder);
+        MockProver::run(k, &circuit, vec![]).unwrap().assert_satisfied();
+
+        println!("Public inputs: {:?}", make_public);
+    }
 }
